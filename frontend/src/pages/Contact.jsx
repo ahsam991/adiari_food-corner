@@ -91,7 +91,7 @@ export default function Contact() {
                     </div>
                     <div className="form-group">
                       <label className="form-label">Last Name *</label>
-                      <input name="last_name" type="text" className="form-input" placeholder="Hassan" value={formData.last_name} onChange={handleChange} />
+                      <input name="last_name" type="text" required className="form-input" placeholder="Hassan" value={formData.last_name} onChange={handleChange} />
                     </div>
                   </div>
                   <div className="form-group">
@@ -107,9 +107,9 @@ export default function Contact() {
                     <select name="subject" className="form-input form-select" value={formData.subject} onChange={handleChange}>
                       <option>General Inquiry</option>
                       <option>Halal Certification Query</option>
-                      <option>Private Dining &amp; Events</option>
+                      <option>Private Dining & Events</option>
                       <option>Reservation Help</option>
-                      <option>Delivery &amp; Ordering</option>
+                      <option>Delivery & Ordering</option>
                       <option>Feedback</option>
                       <option>Catering</option>
                     </select>
