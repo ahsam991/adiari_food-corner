@@ -292,12 +292,14 @@ app.post('/api/contact', (req, res) => {
 // ================================================================
 app.get('/api/admin/overview', (req, res) => {
   try {
+    const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+    const ordersToday  = db.prepare('SELECT * FROM orders WHERE DATE(created_at) = ? ORDER BY created_at DESC').all(today);
     const orders       = db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 20').all();
     const reservations = db.prepare('SELECT * FROM reservations ORDER BY date, time').all();
     const revenue      = db.prepare('SELECT COALESCE(SUM(total),0) as total FROM orders').get();
     const menuCount    = db.prepare('SELECT count(*) as c FROM menu_items WHERE available=1').get();
     res.json({
-      ordersToday:   orders.length,
+      ordersToday:   ordersToday.length,
       revenue:       revenue.total,
       reservations:  reservations.length,
       activeMenu:    menuCount.c,

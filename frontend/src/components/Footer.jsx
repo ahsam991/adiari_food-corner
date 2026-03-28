@@ -52,10 +52,10 @@ export default function Footer() {
             <div className="footer-heading">Services</div>
             <ul className="footer-links">
               <li><Link to="/order">Online Ordering</Link></li>
-              <li><a href="#">Delivery</a></li>
-              <li><a href="#">Private Dining</a></li>
-              <li><a href="#">Catering</a></li>
-              <li><a href="#">Gift Cards</a></li>
+              <li><Link to="/contact">Delivery</Link></li>
+              <li><Link to="/contact">Private Dining</Link></li>
+              <li><Link to="/contact">Catering</Link></li>
+              <li><Link to="/contact">Gift Cards</Link></li>
             </ul>
             <div className="footer-heading" style={{ marginTop:'var(--sp-8)' }}>Hours</div>
             <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
@@ -74,10 +74,10 @@ export default function Footer() {
           <div>
             <div className="footer-heading">Follow Us</div>
             <ul className="footer-links">
-              <li><a href="#" target="_blank" rel="noopener noreferrer">Instagram</a></li>
-              <li><a href="#" target="_blank" rel="noopener noreferrer">Facebook</a></li>
-              <li><a href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-              <li><a href="#" target="_blank" rel="noopener noreferrer">TikTok</a></li>
+              <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+              <li><a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a></li>
+              <li><a href="https://wa.me/8801700000000" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+              <li><a href="https://tiktok.com" target="_blank" rel="noopener noreferrer">TikTok</a></li>
             </ul>
             <div style={{ marginTop:'var(--sp-8)', padding:'var(--sp-4)', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)' }}>
               <div style={{ fontSize:'0.65rem', fontFamily:'var(--font-label)', letterSpacing:'0.18em', textTransform:'uppercase', color:'var(--gold-dim)', marginBottom:'var(--sp-2)' }}>☪ Halal Certified</div>
@@ -91,8 +91,8 @@ export default function Footer() {
         <div className="footer-copy">
           <span>© {new Date().getFullYear()} {RESTAURANT.name}. All rights reserved.</span>
           <div className="footer-copy-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
+            <Link to="/contact">Privacy Policy</Link>
+            <Link to="/contact">Terms of Service</Link>
             <Link to="/admin">Admin</Link>
           </div>
         </div>

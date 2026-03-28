@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { loadMenu } from '../menuData';
+import { apiPlaceOrder } from '../api';
 
 const CART_KEY = 'adi_ari_cart';
 const loadCart = () => { try { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch { return []; } };
@@ -10,6 +11,8 @@ export default function Order() {
   const [cart,    setCart]    = useState(loadCart);
   const [addedId, setAddedId] = useState(null);
   const [menu,    setMenu]    = useState([]);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placing, setPlacing] = useState(false);
 
   useEffect(() => {
     // Load only available items from shared store
@@ -28,6 +31,35 @@ export default function Order() {
   };
   const updateQty = (id, delta) => {
     setCart(prev => prev.map(c => c.id === id ? { ...c, qty: c.qty + delta } : c).filter(c => c.qty > 0));
+  };
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) {
+      alert('Your cart is empty!');
+      return;
+    }
+
+    setPlacing(true);
+    try {
+      const orderData = {
+        items: cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price })),
+        mode,
+        subtotal,
+        delivery,
+        tax,
+        total,
+        timestamp: new Date().toISOString()
+      };
+
+      await apiPlaceOrder(orderData);
+      setOrderPlaced(true);
+      setCart([]);
+      saveCart([]);
+    } catch (error) {
+      alert(`Order placement failed: ${error.message || 'Please try again'}`);
+    } finally {
+      setPlacing(false);
+    }
   };
 
   const subtotal  = cart.reduce((s, c) => s + c.price * c.qty, 0);
@@ -121,7 +153,14 @@ export default function Order() {
               </div>
 
               <div style={{ padding: 'var(--sp-4) var(--sp-6)', flex: 1, overflowY: 'auto' }}>
-                {cart.length === 0 ? (
+                {orderPlaced ? (
+                  <div style={{ textAlign: 'center', padding: 'var(--sp-12) 0' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '3.5rem', display: 'block', marginBottom: 12, color: '#15803d' }}>check_circle</span>
+                    <h3 className="headline-md mb-2">Order Placed! ☪</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)', marginBottom: 16 }}>Thank you for ordering from ADI ARI HALAL FOOD CORNER!</p>
+                    <button className="btn btn-primary" onClick={() => setOrderPlaced(false)}>Place Another Order</button>
+                  </div>
+                ) : cart.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 'var(--sp-12) 0', color: 'var(--on-surface-variant)' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '2.5rem', display: 'block', marginBottom: 8 }}>shopping_cart</span>
                     <p style={{ fontSize: '0.875rem' }}>Your cart is empty</p>
@@ -154,8 +193,9 @@ export default function Order() {
                   <div className="totals-row"><span>Tax (8%)</span><span>${tax.toFixed(2)}</span></div>
                   <div className="totals-row totals-row--total"><span>Total</span><span className="price">${total.toFixed(2)}</span></div>
                   <button className="btn btn-primary w-full mt-4" style={{ justifyContent: 'center' }}
-                    onClick={() => alert(`✓ Order placed! Total: $${total.toFixed(2)}\n\nThank you for ordering from ADI ARI HALAL FOOD CORNER!\n(Backend payment integration coming in Phase 2)`)}>
-                    Checkout →
+                    onClick={handleCheckout}
+                    disabled={placing || cart.length === 0}>
+                    {placing ? 'Processing...' : 'Checkout →'}
                   </button>
                   <button className="btn w-full mt-2" style={{ justifyContent: 'center', fontSize: '0.65rem', color: 'var(--on-surface-variant)' }}
                     onClick={() => setCart([])}>

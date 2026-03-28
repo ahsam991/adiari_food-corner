@@ -121,7 +121,7 @@ export default function Admin() {
       if (apiMode) await apiDeleteMenuItem(id);
       persist(menuItems.filter(i => i.id !== id));
       setDeleteTarget(null);
-      showToast('Item deleted.', 'error');
+      showToast('Item deleted.', 'success');
     } catch (e) { showToast(e.message, 'error'); }
   };
 
@@ -166,7 +166,7 @@ export default function Admin() {
 
       {/* Toast */}
       {toast && (
-        <div className="admin-toast" style={{ background: toast.type === 'error' ? 'var(--primary)' : '#15803d' }}>
+        <div className="admin-toast" style={{ background: toast.type === 'error' ? '#dc2626' : '#15803d' }}>
           {toast.msg}
         </div>
       )}
