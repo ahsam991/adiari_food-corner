@@ -9,8 +9,134 @@ const path    = require('path');
 const Database = require('better-sqlite3');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// Configure CORS with origin whitelist for security
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://adiari-food-corner.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean); // Remove undefined values
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' })); // Limit request body size
+
+// Input validation middleware
+const validateMenuInput = (req, res, next) => {
+  const { name, price, category } = req.body;
+
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({ error: 'Name is required and must be a non-empty string' });
+  }
+
+  if (!price || typeof price !== 'number' || price <= 0) {
+    return res.status(400).json({ error: 'Price is required and must be a positive number' });
+  }
+
+  if (!category || typeof category !== 'string') {
+    return res.status(400).json({ error: 'Category is required' });
+  }
+
+  // Sanitize: trim name and limit length
+  req.body.name = name.trim().substring(0, 200);
+
+  next();
+};
+
+const validateOrderInput = (req, res, next) => {
+  const { items, total, mode } = req.body;
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Items array is required and must not be empty' });
+  }
+
+  if (typeof total !== 'number' || total <= 0) {
+    return res.status(400).json({ error: 'Total must be a positive number' });
+  }
+
+  if (!mode || !['delivery', 'pickup'].includes(mode)) {
+    return res.status(400).json({ error: 'Mode must be either "delivery" or "pickup"' });
+  }
+
+  next();
+};
+
+const validateReservationInput = (req, res, next) => {
+  const { first_name, last_name, email, phone, date, time, party_size } = req.body;
+
+  if (!first_name || typeof first_name !== 'string' || first_name.trim().length === 0) {
+    return res.status(400).json({ error: 'First name is required' });
+  }
+
+  if (!last_name || typeof last_name !== 'string' || last_name.trim().length === 0) {
+    return res.status(400).json({ error: 'Last name is required' });
+  }
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email is required' });
+  }
+
+  if (!phone || typeof phone !== 'string' || phone.trim().length < 10) {
+    return res.status(400).json({ error: 'Valid phone number is required' });
+  }
+
+  if (!date || !time) {
+    return res.status(400).json({ error: 'Date and time are required' });
+  }
+
+  if (!party_size || typeof party_size !== 'number' || party_size < 1 || party_size > 20) {
+    return res.status(400).json({ error: 'Party size must be between 1 and 20' });
+  }
+
+  // Sanitize inputs
+  req.body.first_name = first_name.trim().substring(0, 100);
+  req.body.last_name = last_name.trim().substring(0, 100);
+  req.body.email = email.trim().substring(0, 200);
+  req.body.phone = phone.trim().substring(0, 20);
+
+  next();
+};
+
+const validateContactInput = (req, res, next) => {
+  const { first_name, last_name, email, message } = req.body;
+
+  if (!first_name || typeof first_name !== 'string' || first_name.trim().length === 0) {
+    return res.status(400).json({ error: 'First name is required' });
+  }
+
+  if (!last_name || typeof last_name !== 'string' || last_name.trim().length === 0) {
+    return res.status(400).json({ error: 'Last name is required' });
+  }
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email is required' });
+  }
+
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  // Sanitize and limit message length
+  req.body.first_name = first_name.trim().substring(0, 100);
+  req.body.last_name = last_name.trim().substring(0, 100);
+  req.body.email = email.trim().substring(0, 200);
+  req.body.message = message.trim().substring(0, 2000);
+
+  next();
+};
 
 // ── Auto-create & open SQLite database ──
 const DB_PATH = path.join(__dirname, 'data', 'restaurant.db');
@@ -173,10 +299,9 @@ app.get('/api/menu/:id', (req, res) => {
 });
 
 // POST create
-app.post('/api/menu', (req, res) => {
+app.post('/api/menu', validateMenuInput, (req, res) => {
   try {
     const { name, jp = '', cat = 'Mains', price, img = '', desc = '', badge = '', halal = true, available = true } = req.body;
-    if (!name || !price) return res.status(400).json({ error: 'name and price are required' });
     const result = db.prepare(`
       INSERT INTO menu_items (name, jp, category, price, img, description, badge, halal, available)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -187,7 +312,7 @@ app.post('/api/menu', (req, res) => {
 });
 
 // PUT update
-app.put('/api/menu/:id', (req, res) => {
+app.put('/api/menu/:id', validateMenuInput, (req, res) => {
   try {
     const { name, jp, cat, price, img, desc, badge, halal, available } = req.body;
     const existing = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.id);
@@ -233,10 +358,9 @@ app.delete('/api/menu/:id', (req, res) => {
 // ================================================================
 //  ROUTES — ORDERS
 // ================================================================
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', validateOrderInput, (req, res) => {
   try {
     const { items, total, mode = 'delivery', customer = '' } = req.body;
-    if (!items || items.length === 0) return res.status(400).json({ error: 'Empty order' });
     const result = db.prepare(
       'INSERT INTO orders (items_json, total, mode, customer) VALUES (?, ?, ?, ?)'
     ).run(JSON.stringify(items), Number(total), mode, customer);
@@ -254,12 +378,9 @@ app.get('/api/orders', (req, res) => {
 // ================================================================
 //  ROUTES — RESERVATIONS
 // ================================================================
-app.post('/api/reservations', (req, res) => {
+app.post('/api/reservations', validateReservationInput, (req, res) => {
   try {
     const { first_name, last_name, email, phone = '', date, time, party_size, notes = '' } = req.body;
-    if (!first_name || !email || !date || !time || !party_size) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
     const result = db.prepare(
       'INSERT INTO reservations (first_name, last_name, email, phone, date, time, party_size, notes) VALUES (?,?,?,?,?,?,?,?)'
     ).run(first_name, last_name, email, phone, date, time, Number(party_size), notes);
@@ -276,10 +397,9 @@ app.get('/api/reservations', (req, res) => {
 // ================================================================
 //  ROUTES — CONTACT
 // ================================================================
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', validateContactInput, (req, res) => {
   try {
     const { first_name, last_name, email, phone = '', subject = '', message } = req.body;
-    if (!first_name || !email || !message) return res.status(400).json({ error: 'Missing required fields' });
     db.prepare(
       'INSERT INTO contacts (first_name, last_name, email, phone, subject, message) VALUES (?,?,?,?,?,?)'
     ).run(first_name, last_name, email, phone, subject, message);
